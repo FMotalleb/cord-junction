@@ -11,7 +11,7 @@ import (
 func main() {
 	e := echo.New()
 
-	routerGroup := e.Group("/")
+	routerGroup := e.Group("/**")
 	routerGroup.Use(func(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 		return func(context echo.Context) error {
 			req := context.Request()
