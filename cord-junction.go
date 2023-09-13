@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http/httputil"
 	"net/url"
 
@@ -14,7 +15,10 @@ func main() {
 		return func(context echo.Context) error {
 			req := context.Request()
 			res := context.Response().Writer
-			url, _ := url.Parse(req.Host)
+			url, _ := url.Parse(fmt.Sprintf("%s://%s%s", "https", req.Host, req.RequestURI))
+
+			println(url.Scheme)
+			url.Scheme = "https"
 			proxy := httputil.NewSingleHostReverseProxy(url)
 			//trim reverseProxyRoutePrefix
 			path := req.URL.Path
@@ -25,5 +29,5 @@ func main() {
 			return nil
 		}
 	})
-	e.Start(":80")
+	e.Start(":3390")
 }
