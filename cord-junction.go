@@ -25,6 +25,7 @@ func main() {
 			// req.URL.Path = path
 
 			// ServeHttp is non blocking and uses a go routine under the hood
+			println(url.String())
 			proxy.ServeHTTP(res, req)
 			return nil
 		}
