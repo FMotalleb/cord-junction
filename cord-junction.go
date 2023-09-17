@@ -2,33 +2,53 @@ package main
 
 import (
 	"fmt"
-	"net/http/httputil"
-	"net/url"
-
-	"github.com/labstack/echo"
+	"io"
+	"net"
 )
 
 func main() {
-	e := echo.New()
+	//http.HandleFunc("/", handler)
+	//http.ListenAndServe(":8081", nil)
 
-	routerGroup := e.Group("/**")
-	routerGroup.Use(func(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
-		return func(context echo.Context) error {
-			req := context.Request()
-			res := context.Response().Writer
-			url, _ := url.Parse(fmt.Sprintf("%s://%s%s", "https", req.Host, req.RequestURI))
-			url.Scheme = "https"
-			proxy := httputil.NewSingleHostReverseProxy(url)
+	listener, err := net.Listen("tcp", ":443")
+	if err != nil {
+		panic("connection error:" + err.Error())
+	}
 
-			//trim reverseProxyRoutePrefix
-			// path := req.URL.Path
-			// req.URL.Path = path
-
-			// ServeHttp is non blocking and uses a go routine under the hood
-			println(url.String())
-			proxy.ServeHTTP(res, req)
-			return nil
+	for {
+		conn, err := listener.Accept()
+		fmt.Println("connected")
+		if err != nil {
+			fmt.Println("Accept Error:", err)
+			continue
 		}
-	})
-	e.Start(":3390")
+		copyConn(conn)
+	}
+}
+
+func copyConn(src net.Conn) {
+	target := src.LocalAddr()
+	dst, err := net.Dial(target.Network(), target.String())
+	if err != nil {
+		panic("Dial Error:" + err.Error())
+	}
+
+	done := make(chan struct{})
+
+	go func() {
+		defer src.Close()
+		defer dst.Close()
+		io.Copy(dst, src)
+		done <- struct{}{}
+	}()
+
+	go func() {
+		defer src.Close()
+		defer dst.Close()
+		io.Copy(src, dst)
+		done <- struct{}{}
+	}()
+
+	<-done
+	<-done
 }
