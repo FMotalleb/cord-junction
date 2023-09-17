@@ -28,7 +28,7 @@ func main() {
 
 func copyConn(src net.Conn) {
 	target := src.RemoteAddr()
-	dst, err := net.Dial(target.Network(), fmt.Sprintf("%s:443", target.String()))
+	dst, err := net.Dial(target.Network(), fmt.Sprintf("%s", target.String()))
 	if err != nil {
 		panic("Dial Error:" + err.Error())
 	}
