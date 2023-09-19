@@ -2,53 +2,19 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"net"
+	"net/http"
 )
 
 func main() {
-	//http.HandleFunc("/", handler)
-	//http.ListenAndServe(":8081", nil)
-
-	listener, err := net.Listen("tcp", ":443")
-	if err != nil {
-		panic("connection error:" + err.Error())
-	}
-
-	for {
-		conn, err := listener.Accept()
-		fmt.Println("connected")
-		if err != nil {
-			fmt.Println("Accept Error:", err)
-			continue
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("Request headers:\n")
+		fmt.Printf("%s", r.Host)
+		for header, value := range r.Header {
+			fmt.Printf("%s: %s\n", header, value)
 		}
-		copyConn(conn)
+	})
+
+	if err := http.ListenAndServe(":80", nil); err != nil {
+		fmt.Println(err)
 	}
-}
-
-func copyConn(src net.Conn) {
-	target := src.RemoteAddr()
-	dst, err := net.Dial(target.Network(), fmt.Sprintf("%s", target.String()))
-	if err != nil {
-		panic("Dial Error:" + err.Error())
-	}
-
-	done := make(chan struct{})
-
-	go func() {
-		defer src.Close()
-		defer dst.Close()
-		io.Copy(dst, src)
-		done <- struct{}{}
-	}()
-
-	go func() {
-		defer src.Close()
-		defer dst.Close()
-		io.Copy(src, dst)
-		done <- struct{}{}
-	}()
-
-	<-done
-	<-done
 }
